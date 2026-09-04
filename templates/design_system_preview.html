@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Design System Components - Test Preview{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-4">
+  <div class="card">
+    <div class="card-header">
+      <h2>Design System Test Suite</h2>
+      <span class="badge badge-info">Preview Mode</span>
+    </div>
+    <div class="card-body">
+      <p>Testing buttons, badges, forms, and grid layouts.</p>
+      
+      <div class="flex gap-2" style="margin-bottom: 1rem; flex-wrap: wrap;">
+        <button type="button" class="btn btn-primary">Primary Button</button>
+        <button type="button" class="btn btn-secondary">Secondary Button</button>
+        <button type="button" class="btn btn-outline">Outline Button</button>
+        <button type="button" class="btn btn-danger">Danger Button</button>
+        <button type="button" class="btn btn-success">Success Button</button>
+      </div>
+
+      <div class="flex gap-2" style="margin-bottom: 1rem; flex-wrap: wrap;">
+        <span class="badge badge-info">Badge Info</span>
+        <span class="badge badge-warning">Badge Warning (Due Soon)</span>
+        <span class="badge badge-danger">Badge Danger (Overdue)</span>
+        <span class="badge badge-success">Badge Success (Completed)</span>
+        <span class="badge badge-points">⭐ 25 pts</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="form-group">
+          <label class="form-label">Sample Input</label>
+          <input type="text" class="form-input" placeholder="Input text here..." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sample Select</label>
+          <select class="form-select">
+            <option>Option 1</option>
+            <option>Option 2</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer">
+      <span>Footer action area</span>
+      <button class="btn btn-sm btn-primary">Submit</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
