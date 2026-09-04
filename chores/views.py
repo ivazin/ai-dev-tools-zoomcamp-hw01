@@ -126,3 +126,65 @@ def complete_chore_view(request, chore_id):
     return redirect("dashboard")
 
 
+@login_required
+def chore_create_view(request):
+    from django.contrib import messages
+    from django.shortcuts import redirect
+    from chores.forms import ChoreCreateForm
+    from chores.models import Chore, ChoreTemplate, ChoreLog, UserProfile
+
+    if request.method == "POST":
+        form = ChoreCreateForm(request.POST)
+        if form.is_valid():
+            chore_type = form.cleaned_data["chore_type"]
+            title = form.cleaned_data["title"]
+            description = form.cleaned_data["description"]
+            points = form.cleaned_data["points"]
+            user_profile = getattr(request.user, "profile", None)
+
+            if chore_type == "one_off":
+                due_date = form.cleaned_data["due_date"]
+                assignee = form.cleaned_data["assignee"]
+                status = Chore.Status.PENDING if assignee else Chore.Status.CLAIMABLE
+
+                chore = Chore.objects.create(
+                    title=title,
+                    description=description,
+                    points=points,
+                    due_date=due_date,
+                    assignee=assignee,
+                    status=status,
+                )
+                ChoreLog.objects.create(
+                    chore=chore,
+                    user=user_profile,
+                    action=ChoreLog.Action.CREATED,
+                    note=f"Created one-off chore by {request.user.username}",
+                )
+                messages.success(request, f"Chore '{title}' created successfully!")
+            else:
+                frequency = form.cleaned_data["frequency"]
+                assignment_strategy = form.cleaned_data["assignment_strategy"]
+
+                active_roommates = list(
+                    UserProfile.objects.filter(is_active_roommate=True).values_list("id", flat=True)
+                )
+                template = ChoreTemplate.objects.create(
+                    title=title,
+                    description=description,
+                    points=points,
+                    frequency=frequency,
+                    assignment_strategy=assignment_strategy,
+                    is_active=True,
+                    rotation_order=active_roommates if assignment_strategy == ChoreTemplate.AssignmentStrategy.ROUND_ROBIN else [],
+                )
+                messages.success(request, f"Recurring template '{title}' created successfully!")
+
+            return redirect("dashboard")
+    else:
+        form = ChoreCreateForm()
+
+    return render(request, "chores/chore_form.html", {"form": form})
+
+
+

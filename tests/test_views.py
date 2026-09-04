@@ -302,4 +302,65 @@ def test_complete_chore_unauthorized_attempt(client):
     assert "Unauthorized" in res.content.decode("utf-8")
 
 
+@pytest.mark.django_db
+def test_create_one_off_chore_view(client):
+    from django.utils import timezone
+    import datetime
+    from chores.models import ChoreLog
+
+    user = User.objects.create_user(username="creator", password="pw")
+    profile = UserProfile.objects.create(user=user)
+    client.login(username="creator", password="pw")
+
+    future_date = (timezone.now() + datetime.timedelta(days=2)).strftime("%Y-%m-%d %H:%M")
+    res = client.post(reverse("chore_create"), {
+        "chore_type": "one_off",
+        "title": "Clean Oven",
+        "description": "Scrub the racks and glass",
+        "points": 5,
+        "due_date": future_date,
+        "assignee": profile.id,
+    })
+    assert res.status_code == 302
+    assert res.url == reverse("dashboard")
+
+    chore = Chore.objects.get(title="Clean Oven")
+    assert chore.points == 5
+    assert chore.assignee == profile
+    assert chore.status == Chore.Status.PENDING
+
+    log = ChoreLog.objects.filter(chore=chore, action=ChoreLog.Action.CREATED).first()
+    assert log is not None
+
+
+@pytest.mark.django_db
+def test_create_recurring_template_view(client):
+    from chores.models import ChoreTemplate
+
+    user1 = User.objects.create_user(username="roomie1", password="pw")
+    p1 = UserProfile.objects.create(user=user1, is_active_roommate=True)
+    user2 = User.objects.create_user(username="roomie2", password="pw")
+    p2 = UserProfile.objects.create(user=user2, is_active_roommate=True)
+
+    client.login(username="roomie1", password="pw")
+
+    res = client.post(reverse("chore_create"), {
+        "chore_type": "template",
+        "title": "Clean Bathroom",
+        "description": "Weekly deep clean",
+        "points": 4,
+        "frequency": ChoreTemplate.Frequency.WEEKLY,
+        "assignment_strategy": ChoreTemplate.AssignmentStrategy.ROUND_ROBIN,
+    })
+    assert res.status_code == 302
+    assert res.url == reverse("dashboard")
+
+    template = ChoreTemplate.objects.get(title="Clean Bathroom")
+    assert template.points == 4
+    assert template.is_active is True
+    assert p1.id in template.rotation_order
+    assert p2.id in template.rotation_order
+
+
+
 

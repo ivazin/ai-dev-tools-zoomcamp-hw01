@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Create Chore or Template - Household Chore Manager{% endblock %}
+
+{% block content %}
+<div class="flex justify-center">
+  <div class="card" style="width: 100%; max-width: 600px;">
+    <div class="card-header">
+      <h2>Create Chore</h2>
+    </div>
+
+    <div class="card-body">
+      <form method="post" action="{% url 'chore_create' %}">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+              <p>{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="form-group">
+          <label class="form-label">Chore Type</label>
+          <div class="flex gap-4" style="margin-top: var(--space-1);">
+            {% for radio in form.chore_type %}
+              <label style="cursor: pointer; display: flex; align-items: center; gap: var(--space-2);">
+                {{ radio.tag }} {{ radio.choice_label }}
+              </label>
+            {% endfor %}
+          </div>
+          {% if form.chore_type.errors %}
+            <div class="form-error">{{ form.chore_type.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="id_title">Title *</label>
+          {{ form.title }}
+          {% if form.title.errors %}
+            <div class="form-error">{{ form.title.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="id_description">Description</label>
+          {{ form.description }}
+          {% if form.description.errors %}
+            <div class="form-error">{{ form.description.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="id_points">Points *</label>
+          {{ form.points }}
+          {% if form.points.errors %}
+            <div class="form-error">{{ form.points.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <!-- One-Off Chore Options -->
+        <div id="one-off-fields" style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--space-4); margin-top: var(--space-4);">
+          <h4>One-Off Options</h4>
+          <div class="form-group" style="margin-top: var(--space-2);">
+            <label class="form-label" for="id_due_date">Due Date</label>
+            {{ form.due_date }}
+            {% if form.due_date.errors %}
+              <div class="form-error">{{ form.due_date.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="id_assignee">Assignee</label>
+            {{ form.assignee }}
+            {% if form.assignee.errors %}
+              <div class="form-error">{{ form.assignee.errors.0 }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Recurring Template Options -->
+        <div id="template-fields" style="border-top: 1px solid var(--color-neutral-200); padding-top: var(--space-4); margin-top: var(--space-4);">
+          <h4>Recurring Template Options</h4>
+          <div class="form-group" style="margin-top: var(--space-2);">
+            <label class="form-label" for="id_frequency">Frequency</label>
+            {{ form.frequency }}
+            {% if form.frequency.errors %}
+              <div class="form-error">{{ form.frequency.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="id_assignment_strategy">Assignment Strategy</label>
+            {{ form.assignment_strategy }}
+            {% if form.assignment_strategy.errors %}
+              <div class="form-error">{{ form.assignment_strategy.errors.0 }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div style="margin-top: var(--space-6); display: flex; justify-content: flex-end; gap: var(--space-2);">
+          <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary">Create Chore</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleFields() {
+    const isOneOff = document.querySelector('input[name="chore_type"]:checked')?.value === 'one_off';
+    const oneOffDiv = document.getElementById('one-off-fields');
+    const templateDiv = document.getElementById('template-fields');
+    if (oneOffDiv && templateDiv) {
+      oneOffDiv.style.display = isOneOff ? 'block' : 'none';
+      templateDiv.style.display = isOneOff ? 'none' : 'block';
+    }
+  }
+  document.querySelectorAll('input[name="chore_type"]').forEach(el => {
+    el.addEventListener('change', toggleFields);
+  });
+  toggleFields();
+</script>
+{% endblock %}
