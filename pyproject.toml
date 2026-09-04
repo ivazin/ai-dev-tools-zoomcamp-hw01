@@ -1,0 +1,18 @@
+[project]
+name = "household-chore-manager"
+version = "0.1.0"
+description = "Collaborative task management application designed for shared apartments"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "django>=5.0",
+    "pytest-django",
+    "pytest-cov",
+    "python-dotenv",
+    "apscheduler",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "chore_manager.settings"
+python_files = ["test_*.py", "*_test.py"]
+testpaths = ["tests"]
