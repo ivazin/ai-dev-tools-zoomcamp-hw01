@@ -362,5 +362,59 @@ def test_create_recurring_template_view(client):
     assert p2.id in template.rotation_order
 
 
+@pytest.mark.django_db
+def test_leaderboard_view_metrics_and_champion(client):
+    from django.utils import timezone
+    import datetime
+
+    # Active roommates
+    u1 = User.objects.create_user(username="alice", password="pw")
+    p1 = UserProfile.objects.create(user=u1, total_points=20, is_active_roommate=True)
+
+    u2 = User.objects.create_user(username="bob", password="pw")
+    p2 = UserProfile.objects.create(user=u2, total_points=10, is_active_roommate=True)
+
+    # Inactive roommate (should be excluded)
+    u3 = User.objects.create_user(username="inactive_dave", password="pw")
+    UserProfile.objects.create(user=u3, total_points=50, is_active_roommate=False)
+
+    # Chore completed by alice
+    Chore.objects.create(
+        title="Dishes",
+        points=5,
+        status=Chore.Status.COMPLETED,
+        assignee=p1,
+        completed_by=p1,
+        due_date=timezone.now(),
+        completed_at=timezone.now(),
+    )
+
+    client.login(username="alice", password="pw")
+    res = client.get(reverse("leaderboard"))
+    assert res.status_code == 200
+    content = res.content.decode("utf-8")
+
+    assert "alice" in content
+    assert "bob" in content
+    assert "inactive_dave" not in content
+
+    # Champion badge for Alice
+    assert "🏆 Chore Champion" in content
+    assert "⭐ 20 pts" in content
+    assert "⭐ 10 pts" in content
+
+
+@pytest.mark.django_db
+def test_leaderboard_empty_state(client):
+    u = User.objects.create_user(username="newbie", password="pw")
+    UserProfile.objects.create(user=u, total_points=0, is_active_roommate=True)
+
+    client.login(username="newbie", password="pw")
+    res = client.get(reverse("leaderboard"))
+    assert res.status_code == 200
+    assert "No points earned yet — complete a chore to take the lead!" in res.content.decode("utf-8")
+
+
+
 
 

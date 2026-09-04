@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Leaderboard - Household Chore Manager{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-4" style="max-width: 800px; margin: 0 auto;">
+  <div>
+    <h1>Household Leaderboard & Fairness</h1>
+    <p>See who is keeping the apartment running smoothly!</p>
+  </div>
+
+  {% include "chores/partials/leaderboard.html" %}
+</div>
+{% endblock %}

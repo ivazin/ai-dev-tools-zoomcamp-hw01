@@ -187,4 +187,47 @@ def chore_create_view(request):
     return render(request, "chores/chore_form.html", {"form": form})
 
 
+@login_required
+def leaderboard_view(request):
+    from django.db.models import Count, Q
+    from chores.models import UserProfile, Chore
+
+    # Active roommates ordered by total_points descending, then completed count
+    active_profiles = (
+        UserProfile.objects.filter(is_active_roommate=True)
+        .annotate(
+            completed_count=Count(
+                "completed_chores",
+                filter=Q(completed_chores__status=Chore.Status.COMPLETED),
+            )
+        )
+        .order_by("-total_points", "-completed_count", "user__username")
+    )
+
+    top_points = active_profiles.first().total_points if active_profiles.exists() else 0
+    total_household_points = sum(p.total_points for p in active_profiles)
+
+    leaderboard_data = []
+    has_any_points = any(p.total_points > 0 for p in active_profiles)
+
+    if has_any_points:
+        for index, profile in enumerate(active_profiles, start=1):
+            percentage = round((profile.total_points / top_points * 100)) if top_points > 0 else 0
+            is_champion = (index == 1 and profile.total_points > 0)
+            leaderboard_data.append({
+                "rank": index,
+                "profile": profile,
+                "completed_count": profile.completed_count,
+                "percentage": percentage,
+                "is_champion": is_champion,
+            })
+
+    context = {
+        "leaderboard_data": leaderboard_data,
+        "total_household_points": total_household_points,
+    }
+    return render(request, "chores/leaderboard.html", context)
+
+
+
 

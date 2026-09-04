@@ -17,6 +17,7 @@ from chores.views import (
     claim_chore_view,
     complete_chore_view,
     chore_create_view,
+    leaderboard_view,
 )
 
 urlpatterns = [
@@ -28,8 +29,9 @@ urlpatterns = [
     path("chores/<int:chore_id>/claim/", claim_chore_view, name="claim_chore"),
     path("chores/<int:chore_id>/complete/", complete_chore_view, name="complete_chore"),
     path("create/", chore_create_view, name="chore_create"),
-    path("leaderboard/", placeholder_view, name="leaderboard"),
+    path("leaderboard/", leaderboard_view, name="leaderboard"),
     path("profile/", placeholder_view, name="profile"),
 ]
+
 
 
