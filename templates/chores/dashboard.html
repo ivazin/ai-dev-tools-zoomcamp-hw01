@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Household Chore Manager{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-4">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1>Household Dashboard</h1>
+      <p>Keep your shared space clean, fair, and organized.</p>
+    </div>
+    <div>
+      <a href="{% url 'chore_create' %}" class="btn btn-primary">+ Create Chore</a>
+    </div>
+  </div>
+
+  <!-- Status Navigation Tabs -->
+  <div class="flex gap-2" style="border-bottom: 2px solid var(--color-neutral-200); padding-bottom: var(--space-2);">
+    <a href="{% url 'dashboard' %}?tab=my" class="nav-link {% if active_tab == 'my' %}active{% endif %}" style="font-weight: 600; {% if active_tab == 'my' %}border-bottom: 2px solid var(--color-primary); margin-bottom: -10px;{% endif %}">
+      My Chores ({{ my_chores_count }})
+    </a>
+    <a href="{% url 'dashboard' %}?tab=all" class="nav-link {% if active_tab == 'all' %}active{% endif %}" style="font-weight: 600; {% if active_tab == 'all' %}border-bottom: 2px solid var(--color-primary); margin-bottom: -10px;{% endif %}">
+      All Household Chores ({{ all_chores_count }})
+    </a>
+    <a href="{% url 'dashboard' %}?tab=completed" class="nav-link {% if active_tab == 'completed' %}active{% endif %}" style="font-weight: 600; {% if active_tab == 'completed' %}border-bottom: 2px solid var(--color-primary); margin-bottom: -10px;{% endif %}">
+      Completed Recently ({{ completed_chores_count }})
+    </a>
+  </div>
+
+  <!-- Chore List Grid -->
+  {% if chores %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" style="margin-top: var(--space-4);">
+      {% for chore in chores %}
+        {% include "chores/partials/chore_card.html" with chore=chore user=user %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card" style="text-align: center; padding: var(--space-8); margin-top: var(--space-4);">
+      <div style="font-size: 2.5rem; margin-bottom: var(--space-2);">🎉</div>
+      {% if active_tab == 'my' %}
+        <h3>No chores assigned to you!</h3>
+        <p>Enjoy your free time, or grab a chore from the <a href="{% url 'claim_pool' %}">Claim Pool</a>.</p>
+      {% elif active_tab == 'all' %}
+        <h3>All household chores are complete!</h3>
+        <p>The whole apartment is spotless.</p>
+      {% else %}
+        <h3>No completed chores yet.</h3>
+        <p>Finish a chore to see it logged here and earn points!</p>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

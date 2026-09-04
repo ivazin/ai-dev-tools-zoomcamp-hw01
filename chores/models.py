@@ -104,6 +104,23 @@ class Chore(models.Model):
     def __str__(self):
         return f"{self.title} ({self.status})"
 
+    @property
+    def urgency(self):
+        """Returns urgency classification: 'overdue', 'due-soon', or 'normal'."""
+        if self.status == self.Status.COMPLETED:
+            return "completed"
+        if self.status == self.Status.OVERDUE:
+            return "overdue"
+        from django.utils import timezone
+        import datetime
+        now = timezone.now()
+        if self.due_date < now:
+            return "overdue"
+        if self.due_date <= now + datetime.timedelta(hours=24):
+            return "due-soon"
+        return "normal"
+
+
 
 class ChoreLog(models.Model):
     class Action(models.TextChoices):

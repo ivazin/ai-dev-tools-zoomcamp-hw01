@@ -1,7 +1,7 @@
 import pytest
 from django.contrib.auth.models import User
 from django.urls import reverse
-from chores.models import UserProfile
+from chores.models import UserProfile, Chore
 
 @pytest.mark.django_db
 def test_unauthenticated_redirect_to_login(client):
@@ -67,3 +67,81 @@ def test_navigation_bar_authenticated_user_points(client):
     assert "taylor" in content
     assert "⭐ 42 pts" in content
     assert "Log out" in content
+
+
+@pytest.mark.django_db
+def test_dashboard_tabs_and_filtering(client):
+    from django.utils import timezone
+    import datetime
+
+    user1 = User.objects.create_user(username="user1", password="pw")
+    p1 = UserProfile.objects.create(user=user1)
+
+    user2 = User.objects.create_user(username="user2", password="pw")
+    p2 = UserProfile.objects.create(user=user2)
+
+    now = timezone.now()
+
+    # Chore 1: assigned to user1 (due in 2 days)
+    c1 = Chore.objects.create(
+        title="Dishes",
+        points=2,
+        status=Chore.Status.PENDING,
+        assignee=p1,
+        due_date=now + datetime.timedelta(days=2),
+    )
+
+    # Chore 2: assigned to user2 (due in 5 hours -> due soon)
+    c2 = Chore.objects.create(
+        title="Vacuum Living Room",
+        points=3,
+        status=Chore.Status.PENDING,
+        assignee=p2,
+        due_date=now + datetime.timedelta(hours=5),
+    )
+
+    # Chore 3: completed
+    c3 = Chore.objects.create(
+        title="Take out Trash",
+        points=1,
+        status=Chore.Status.COMPLETED,
+        assignee=p1,
+        completed_by=p1,
+        due_date=now - datetime.timedelta(days=1),
+        completed_at=now - datetime.timedelta(hours=1),
+    )
+
+    client.login(username="user1", password="pw")
+
+    # Tab: My Chores (default)
+    res_my = client.get(reverse("dashboard"))
+    assert res_my.status_code == 200
+    assert "Dishes" in res_my.content.decode("utf-8")
+    assert "Vacuum Living Room" not in res_my.content.decode("utf-8")
+    assert "Take out Trash" not in res_my.content.decode("utf-8")
+
+    # Tab: All Household Chores
+    res_all = client.get(reverse("dashboard") + "?tab=all")
+    assert res_all.status_code == 200
+    assert "Dishes" in res_all.content.decode("utf-8")
+    assert "Vacuum Living Room" in res_all.content.decode("utf-8")
+    assert "Due Soon" in res_all.content.decode("utf-8")
+    assert "Take out Trash" not in res_all.content.decode("utf-8")
+
+    # Tab: Completed Recently
+    res_completed = client.get(reverse("dashboard") + "?tab=completed")
+    assert res_completed.status_code == 200
+    assert "Take out Trash" in res_completed.content.decode("utf-8")
+    assert "Dishes" not in res_completed.content.decode("utf-8")
+
+
+@pytest.mark.django_db
+def test_dashboard_empty_states(client):
+    user = User.objects.create_user(username="lonely", password="pw")
+    UserProfile.objects.create(user=user)
+    client.login(username="lonely", password="pw")
+
+    res = client.get(reverse("dashboard") + "?tab=my")
+    assert res.status_code == 200
+    assert "No chores assigned to you!" in res.content.decode("utf-8")
+

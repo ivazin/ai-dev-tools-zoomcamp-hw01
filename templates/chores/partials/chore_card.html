@@ -1,0 +1,57 @@
+<div class="card chore-card" id="chore-{{ chore.id }}">
+  <div class="card-header">
+    <h3 style="margin: 0; font-size: var(--font-size-base); font-weight: 600;">{{ chore.title }}</h3>
+    <span class="badge badge-points">⭐ {{ chore.points }} pt{{ chore.points|pluralize }}</span>
+  </div>
+  
+  <div class="card-body">
+    {% if chore.description %}
+      <p style="font-size: var(--font-size-sm); color: var(--color-neutral-700); margin-bottom: var(--space-3);">
+        {{ chore.description }}
+      </p>
+    {% endif %}
+
+    <div class="flex items-center justify-between" style="font-size: var(--font-size-xs); color: var(--color-neutral-700);">
+      <div>
+        <strong>Assignee:</strong>
+        {% if chore.assignee %}
+          <span>{{ chore.assignee.user.username }}</span>
+        {% else %}
+          <span style="font-style: italic; color: var(--color-neutral-400);">Unassigned</span>
+        {% endif %}
+      </div>
+
+      <div>
+        {% if chore.status == "COMPLETED" %}
+          <span>Done {{ chore.completed_at|date:"M d, H:i" }}</span>
+        {% else %}
+          <span>Due: {{ chore.due_date|date:"M d, H:i" }}</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card-footer">
+    <div>
+      {% if chore.urgency == "completed" %}
+        <span class="badge badge-success">Completed</span>
+      {% elif chore.urgency == "overdue" %}
+        <span class="badge badge-danger">Overdue</span>
+      {% elif chore.urgency == "due-soon" %}
+        <span class="badge badge-warning">Due Soon</span>
+      {% else %}
+        <span class="badge badge-info">Normal</span>
+      {% endif %}
+    </div>
+
+    <div>
+      {% if chore.status != "COMPLETED" and chore.assignee == user.profile %}
+        <!-- Placeholder for completion action in #11 -->
+        <span class="badge badge-normal">Assigned to you</span>
+      {% elif chore.status == "CLAIMABLE" and not chore.assignee %}
+        <!-- Placeholder for claim action in #10 -->
+        <span class="badge badge-info">Available in Pool</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
