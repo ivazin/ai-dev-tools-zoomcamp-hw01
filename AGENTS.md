@@ -2,7 +2,9 @@ Commands
 
 - `uv sync` - install dependencies
 - `uv run pytest` - the whole suite
-- `uv run pytest tests/test_home.py` - one test file
+- `uv run pytest tests/test_models.py` - one test file
+- `uv run python manage.py seed_data` - seed database with sample data
+- `uv run python manage.py runserver` - run dev server
 
 Rules
 

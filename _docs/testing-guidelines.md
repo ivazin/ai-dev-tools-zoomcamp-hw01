@@ -14,7 +14,7 @@ All testing tasks are executed using `uv`.
 uv run pytest
 
 # Run a specific test file
-uv run pytest tests/test_home.py
+uv run pytest tests/test_models.py
 
 # Run a specific test function or class
 uv run pytest -k test_round_robin_advances_to_next_roommate
