@@ -46,8 +46,13 @@
 
     <div>
       {% if chore.status != "COMPLETED" and chore.assignee == user.profile %}
-        <!-- Placeholder for completion action in #11 -->
-        <span class="badge badge-normal">Assigned to you</span>
+        <button type="button"
+                class="btn btn-success btn-sm btn-complete"
+                hx-post="{% url 'complete_chore' chore.id %}"
+                hx-target="#chore-{{ chore.id }}"
+                hx-swap="outerHTML">
+          ✓ Mark Complete
+        </button>
       {% elif chore.status == "CLAIMABLE" and not chore.assignee %}
         <button type="button"
                 class="btn btn-primary btn-sm btn-claim"

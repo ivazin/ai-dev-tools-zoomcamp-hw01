@@ -225,3 +225,81 @@ def test_claim_chore_endpoint(client):
     assert "Cannot claim chore" in res_fail.content.decode("utf-8")
 
 
+@pytest.mark.django_db
+def test_complete_chore_endpoint(client):
+    from django.utils import timezone
+    import datetime
+    from chores.models import ChoreLog
+
+    user = User.objects.create_user(username="finisher", password="pw")
+    profile = UserProfile.objects.create(user=user, total_points=5)
+    client.login(username="finisher", password="pw")
+
+    chore = Chore.objects.create(
+        title="Scrub Sink",
+        points=3,
+        status=Chore.Status.PENDING,
+        assignee=profile,
+        due_date=timezone.now() + datetime.timedelta(days=1),
+    )
+
+    # Complete via HTMX
+    res = client.post(
+        reverse("complete_chore", kwargs={"chore_id": chore.id}),
+        HTTP_HX_REQUEST="true",
+    )
+    assert res.status_code == 200
+    content = res.content.decode("utf-8")
+    assert "Completed" in content
+    # Out of band points update
+    assert 'id="user-points-badge"' in content
+    assert 'hx-swap-oob="true"' in content
+    assert "⭐ 8 pts" in content
+
+    # Check DB
+    chore.refresh_from_db()
+    profile.refresh_from_db()
+    assert chore.status == Chore.Status.COMPLETED
+    assert chore.completed_by == profile
+    assert profile.total_points == 8
+
+    # Check log
+    log = ChoreLog.objects.filter(chore=chore, action=ChoreLog.Action.COMPLETED).first()
+    assert log is not None
+    assert log.user == profile
+
+    # Attempting to complete already completed chore returns 409
+    res_again = client.post(
+        reverse("complete_chore", kwargs={"chore_id": chore.id}),
+        HTTP_HX_REQUEST="true",
+    )
+    assert res_again.status_code == 409
+    assert "already completed" in res_again.content.decode("utf-8")
+
+
+@pytest.mark.django_db
+def test_complete_chore_unauthorized_attempt(client):
+    from django.utils import timezone
+    import datetime
+
+    owner = User.objects.create_user(username="owner", password="pw")
+    owner_profile = UserProfile.objects.create(user=owner)
+
+    intruder = User.objects.create_user(username="intruder", password="pw")
+    UserProfile.objects.create(user=intruder)
+
+    chore = Chore.objects.create(
+        title="Private Chore",
+        points=5,
+        status=Chore.Status.PENDING,
+        assignee=owner_profile,
+        due_date=timezone.now() + datetime.timedelta(days=1),
+    )
+
+    client.login(username="intruder", password="pw")
+    res = client.post(reverse("complete_chore", kwargs={"chore_id": chore.id}))
+    assert res.status_code == 403
+    assert "Unauthorized" in res.content.decode("utf-8")
+
+
+
