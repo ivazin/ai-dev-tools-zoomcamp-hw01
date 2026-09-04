@@ -49,8 +49,13 @@
         <!-- Placeholder for completion action in #11 -->
         <span class="badge badge-normal">Assigned to you</span>
       {% elif chore.status == "CLAIMABLE" and not chore.assignee %}
-        <!-- Placeholder for claim action in #10 -->
-        <span class="badge badge-info">Available in Pool</span>
+        <button type="button"
+                class="btn btn-primary btn-sm btn-claim"
+                hx-post="{% url 'claim_chore' chore.id %}"
+                hx-target="#chore-{{ chore.id }}"
+                hx-swap="outerHTML">
+          Claim Chore
+        </button>
       {% endif %}
     </div>
   </div>

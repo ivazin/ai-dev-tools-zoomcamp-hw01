@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Claim Pool - Household Chore Manager{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-4">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1>Chore Claim Pool</h1>
+      <p>Pick up extra chores to earn points and help your roommates!</p>
+    </div>
+  </div>
+
+  {% if chores %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" style="margin-top: var(--space-4);">
+      {% for chore in chores %}
+        {% include "chores/partials/chore_card.html" with chore=chore user=user %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card" style="text-align: center; padding: var(--space-8); margin-top: var(--space-4);">
+      <div style="font-size: 2.5rem; margin-bottom: var(--space-2);">✨</div>
+      <h3>No chores in the claim pool right now!</h3>
+      <p>Check back later or check out the <a href="{% url 'dashboard' %}">Dashboard</a>.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

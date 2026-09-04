@@ -145,3 +145,83 @@ def test_dashboard_empty_states(client):
     assert res.status_code == 200
     assert "No chores assigned to you!" in res.content.decode("utf-8")
 
+
+@pytest.mark.django_db
+def test_claim_pool_view_and_empty_state(client):
+    from django.utils import timezone
+    import datetime
+
+    user = User.objects.create_user(username="claimer", password="pw")
+    UserProfile.objects.create(user=user)
+    client.login(username="claimer", password="pw")
+
+    # Empty claim pool
+    res = client.get(reverse("claim_pool"))
+    assert res.status_code == 200
+    assert "No chores in the claim pool right now!" in res.content.decode("utf-8")
+
+    # Add claimable chore
+    chore = Chore.objects.create(
+        title="Mop Kitchen Floor",
+        points=4,
+        status=Chore.Status.CLAIMABLE,
+        assignee=None,
+        due_date=timezone.now() + datetime.timedelta(days=1),
+    )
+
+    res2 = client.get(reverse("claim_pool"))
+    assert res2.status_code == 200
+    assert "Mop Kitchen Floor" in res2.content.decode("utf-8")
+    assert "Claim Chore" in res2.content.decode("utf-8")
+
+
+@pytest.mark.django_db
+def test_claim_chore_endpoint(client):
+    from django.utils import timezone
+    import datetime
+    from chores.models import ChoreLog
+
+    user = User.objects.create_user(username="sammy", password="pw")
+    profile = UserProfile.objects.create(user=user)
+    client.login(username="sammy", password="pw")
+
+    chore = Chore.objects.create(
+        title="Clean Microwave",
+        points=2,
+        status=Chore.Status.CLAIMABLE,
+        assignee=None,
+        due_date=timezone.now() + datetime.timedelta(days=1),
+    )
+
+    # Claim via HTMX
+    res = client.post(
+        reverse("claim_chore", kwargs={"chore_id": chore.id}),
+        HTTP_HX_REQUEST="true",
+    )
+    assert res.status_code == 200
+    assert "Clean Microwave" in res.content.decode("utf-8")
+    assert "sammy" in res.content.decode("utf-8")
+
+    # Check database
+    chore.refresh_from_db()
+    assert chore.assignee == profile
+    assert chore.status == Chore.Status.PENDING
+
+    # Check log
+    log = ChoreLog.objects.filter(chore=chore, action=ChoreLog.Action.CLAIMED).first()
+    assert log is not None
+    assert log.user == profile
+
+    # Attempting to claim again by another user fails with 409
+    other_user = User.objects.create_user(username="other", password="pw")
+    UserProfile.objects.create(user=other_user)
+    client.login(username="other", password="pw")
+
+    res_fail = client.post(
+        reverse("claim_chore", kwargs={"chore_id": chore.id}),
+        HTTP_HX_REQUEST="true",
+    )
+    assert res_fail.status_code == 409
+    assert "Cannot claim chore" in res_fail.content.decode("utf-8")
+
+
